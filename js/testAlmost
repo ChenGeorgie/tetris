@@ -1,0 +1,383 @@
+
+var gTetris;
+var gBoard;
+var gIntervalGame;
+var gRowSize = 14;
+var gColSize = 28;
+var EndOfCols = gColSize - 1;
+var randIdxEndBoard = getRandomIntInclusive(0, EndOfCols);
+
+// fix minimum start pos - limit the wall start - not over the limit.
+// var gEndLengthLineIdx = (randIdxEndBoard < 4) ? randIdxEndBoard = 4 : randIdxEndBoard;
+
+// console.log('check index: ',gEndLengthLineIdx);
+
+var gPieces = {
+    // 1 line.
+    lineLocation: {
+        kind: 'line',
+        //row
+        startI: 0,
+        endI: 1,
+
+        // oppsite/parallel shape.
+        // startJ: 0,
+        // endJ: 4
+
+        //col
+        // start from -4 
+        startJ: randIdxEndBoard - 4, // start width tetremino,
+        // end come after the start + 4. 
+        endJ: randIdxEndBoard // end width tetremino
+
+    },
+    // 2. square - default
+    squareLocation: {
+        kind: 'square',
+        //row
+        startI: 0,
+        endI: 2,
+        //col
+        startJ: randIdxEndBoard - 2, // start width tetremino
+        endJ: randIdxEndBoard // end width tetremino
+    },
+    // 3. tetremino
+    tetreminoLocation: {
+        kind: 'tetremino',
+        //row
+        startI: 0,
+        endI: 1,
+        //col
+        startJ: randIdxEndBoard - 3, // start width tetremino
+        endJ: randIdxEndBoard, // end width tetremino
+
+        // // extra square.
+        // extraI: startI + 1,
+        // extraJ: endJ,
+    },
+    // 4. j  - right extra square.
+    jLastRightDownLocation: {
+
+        kind: 'J',
+        //row
+        startI: 0,
+        endI: 1,
+        //col
+        startJ: randIdxEndBoard - 3, // start width tetremino
+        endJ: randIdxEndBoard, // end width tetremino
+    },
+    // 5. l - left extra sqaure.
+    lLastLeftUpLocation: {
+        kind: 'L',
+        //row
+        startI: 0,
+        endI: 1,
+        //col
+        startJ: randIdxEndBoard - 3, // start width tetremino
+        endJ: randIdxEndBoard, // end width tetremino
+    },
+    // 6. s - 2 square in line DOWN from to square off set.
+    sOffSetRightLocation: {
+        kind: 'S',
+        //row
+        startI: 0,
+        endI: 1,
+        //col
+        startJ: randIdxEndBoard - 3, // start width tetremino
+        endJ: randIdxEndBoard, // end width tetremino
+    },
+    // 7. s - 2 square in line UP from to square off set.
+    zOffSetLeftLocation: {
+        kind: 'Z',
+        //row
+        startI: 0,
+        endI: 1,
+        //col
+        startJ: randIdxEndBoard - 3, // start width tetremino
+        endJ: randIdxEndBoard, // end width tetremino
+    },
+}
+
+// tetreminto piece of shapes.
+var line = gPieces.lineLocation; // line.
+var square = gPieces.squareLocation; // square - default.
+var tetremino = gPieces.tetreminoLocation; // tetremino
+var j = gPieces.jLastRightDownLocation; // J  - right extra square. 
+var l = gPieces.lLastLeftUpLocation; // L - left extra sqaure.
+var s = gPieces.sOffSetRightLocation; // S - 2 square in line DOWN from to square off set.
+var z = gPieces.zOffSetLeftLocation; // Z - 2 square in line UP from to square off set.
+
+
+// all pieces of shapes. (7 shapes).
+var gAllPieces = [line, square, tetremino, j, l, s, z];
+
+// get random index/SHAPES from the pieces.
+// var gRandIdxOfIPiece = getRandomIntInclusive(0, gAllPieces.length - 1);
+// one each piece.
+// var gRandPiece = gAllPieces[gRandIdxOfIPiece];
+
+var gRandIdxOfIPiece;
+
+var gRandPiece;
+console.table(gAllPieces);
+
+
+var gGame = {
+    score: 0,
+    isOn: false,
+};
+
+
+// play();
+
+// function play() {
+//     // if (gIntervalGame) clearInterval(gIntervalGame);
+//     gIntervalGame = setInterval(init, 1000);
+// }
+
+
+init();
+
+function init() {
+    
+    var gRandIdxOfIPiece = getRandomIntInclusive(0, gAllPieces.length - 1);
+    // get random index/SHAPES from the pieces.
+    
+    var gBoard = buildBoard();
+    // get random index/SHAPES from the pieces.
+    // print random piece.
+    printRandPiece(gBoard, gRandIdxOfIPiece);
+    //move the piece.
+    // updateLocationPiece(gRandIdxOfIPiece);
+
+    // show on html.
+    renderToHtml(gBoard);
+}
+function updateLocationPiece(gRandIdxOfIPiece) {
+    // console.log(gAllPieces[gRandIdxOfIPiece]);
+    gAllPieces[gRandIdxOfIPiece].startI++;
+    gAllPieces[gRandIdxOfIPiece].endI++;
+    clearPieceRun(gRandIdxOfIPiece);
+}
+
+
+function clearPieceRun(gRandIdxOfIPiece) {
+    // console.log(gAllPieces[gRandIdxOfIPiece]);
+    //  if its we on square or line we got one more line extra. to finish same the all piece.
+    if (gAllPieces[gRandIdxOfIPiece].kind === 'square' || gAllPieces[gRandIdxOfIPiece].kind === 'line') {
+        if (gAllPieces[gRandIdxOfIPiece].endI === gRowSize + 1) {
+            clearInterval(gIntervalGame);
+            console.log('end square line');
+            return;
+        }
+    } else {
+
+        if (gAllPieces[gRandIdxOfIPiece].endI === gRowSize) {
+
+            clearInterval(gIntervalGame);
+            // init();
+            console.log('end');
+            return;
+        }
+    }
+
+}
+
+function renderToHtml(mat) {
+
+    // clear all.
+    var strHeaderHtml = '';
+    var strHtml = '';
+    // make score and time.
+    strHeaderHtml += `<div class="row">`;
+    strHeaderHtml += `<div class="col text-center bg-warning">SCORE: ${gGame.score}</div>`;
+    strHeaderHtml += `<div class="col text-center bg-primary">TIME: 0</div>`;
+    strHeaderHtml += `<div class="col bg-success">`
+
+    // make the arrow in one line.
+    strHeaderHtml += `<div class="row justify-content-around align">`;
+    strHeaderHtml += `<div class="left">🢀</div>`
+    strHeaderHtml += `<div class="right">🢂</div>`
+    strHeaderHtml += `</div>`;
+    strHeaderHtml += `</div>`;
+
+    // create the board.
+    strHtml += `<table>`;
+    for (var i = 0; i < mat.length; i++) {
+        strHtml += `<tr>`
+        for (var j = 0; j < mat[0].length; j++) {
+
+            var className = (mat[i][j] === true) ? 'mark' : '';
+            strHtml += `<td class="cel cel-${i}-${j} ${className}">.</td>`
+
+        }
+        strHtml += `</tr>`
+    }
+    strHtml += `</table>`
+
+    var detailsContainers = document.querySelector('.container');
+    var elBoard = document.querySelector('.container-board');
+    detailsContainers.innerHTML = strHeaderHtml;
+    elBoard.innerHTML = strHtml;
+    // console.log(mat);    
+}
+
+
+function buildBoard() {
+
+    var board = [];
+    for (var i = 0; i < gRowSize; i++) {
+        board[i] = [];
+        for (var j = 0; j < gColSize; j++) {
+            board[i][j] = '';
+        }
+    }
+    // console.log(board);
+    return board;
+}
+
+// take a random piece  tetremino.
+function printRandPiece(mat, gRandIdxOfIPiece) {
+
+    // get the coords.
+    var coordsPiece = [];
+    console.log(gAllPieces[gRandIdxOfIPiece]);
+    // save the all parts of the peice we run on it. 
+    var startI = gAllPieces[gRandIdxOfIPiece].startI;
+    var endI = gAllPieces[gRandIdxOfIPiece].endI;
+    var startJ = gAllPieces[gRandIdxOfIPiece].startJ;
+    var endJ = gAllPieces[gRandIdxOfIPiece].endJ;
+
+    // run on the limit of piece.
+    for (var i = startI; i < endI; i++) {
+        for (var j = startJ; j < endJ; j++) {
+
+            // print the pieces of and limit the pieces by cant over the walls.
+            switch (gAllPieces[gRandIdxOfIPiece].kind) {
+                case 'line':
+                    // limit wall started.
+                    limitWallStarted(gPieces.lineLocation, 4)
+                    // line of 4 square.
+                    mat[i][j] = true;
+                    break;
+                case 'square':
+                    // limit wall started.
+                    limitWallStarted(gPieces.squareLocation, 2)
+                    // square of cell.
+                    mat[i][j] = true;
+                    break;
+                case 'tetremino':
+                    // limit wall started.
+                    limitWallStarted(gPieces.tetreminoLocation, 3);
+                    // line of square 3 square.
+                    mat[i][j] = true;
+                    // sqaure extra down - CENTER.
+                    mat[i + 1][randIdxEndBoard - 2] = true;
+                    break;
+                case 'J':
+
+                    // limit wall started.
+                    limitWallStarted(gPieces.jLastRightDownLocation, 3)
+                    // line of square 3 square.
+                    mat[i][j] = true;
+                    // square extra down - RIGHT.
+                    mat[i + 1][randIdxEndBoard - 1] = true;
+                    break;
+                case 'L':
+                    // limit wall started.
+                    limitWallStarted(gPieces.lLastLeftUpLocation, 3);
+
+                    // line of square 3 square.
+                    mat[i][j] = true;
+                    // sqaure extra down - LEFT.
+                    mat[i + 1][randIdxEndBoard - 3] = true;
+                    break;
+                case 'S':
+                    limitWallStarted(gPieces.sOffSetRightLocation, 3)
+                    // square - 2 TOP LEFT
+                    mat[i][j + 1] = true;
+                    // delete the first square from 3.
+                    mat[i][randIdxEndBoard] = false;
+
+                    // square - bottom right.
+                    mat[i + 1][randIdxEndBoard - 2] = true;
+                    // square - bottom left.
+                    mat[i + 1][randIdxEndBoard - 3] = true;
+                    break;
+                case 'Z':
+
+                    // limit wall started.
+                    limitWallStarted(gPieces.zOffSetLeftLocation, 3)
+
+                    // square - 2 TOP LEFT
+                    mat[i][j] = true;
+
+                    // delete the first square from 3.
+                    mat[i][randIdxEndBoard - 1] = false;
+
+                    // square - bottom left.
+                    mat[i + 1][randIdxEndBoard - 2] = true;
+                    // square - bottom right.
+                    mat[i + 1][randIdxEndBoard - 1] = true;
+                    break;
+            }
+            // save and after return the coords of of the piece tetromino.
+            coordsPiece.push({ i: i, j: j })
+        }
+    }
+    // console.log(coordsPiece);
+    return coordsPiece;
+}
+
+
+function limitWallStarted(kindPieceLocation, numberEndPiece) {
+
+    // limit wall started. show only inside the baord.
+    (randIdxEndBoard < numberEndPiece) ? randIdxEndBoard = numberEndPiece : randIdxEndBoard;
+    kindPieceLocation.startJ = randIdxEndBoard - numberEndPiece;
+    kindPieceLocation.endJ = randIdxEndBoard;
+}
+
+function moveTetris(ev) {
+    var nextLocation = getNextLocation(ev)
+    // console.log('next place', nextLocation);
+    // console.log('place: ', gRandPiece)
+    if (nextLocation.endI > gRowSize) {
+        clearInterval(gIntervalGame);
+        console.log('finish..')
+    }
+}
+
+function getNextLocation(eventKeyboard, gRandPiece) {
+
+    switch (eventKeyboard.key) {
+        case 'ArrowUp':
+            gRandPiece.startI--;
+            gRandPiece.endI--;
+            break;
+        case 'ArrowDown':
+            gRandPiece.startI++;
+            gRandPiece.endI++;
+            break;
+        case 'ArrowLeft':
+            gRandPiece.startJ--;
+            gRandPiece.endJ--;
+            break;
+        case 'ArrowRight':
+            gRandPiece.startJ++;
+            gRandPiece.endJ++;
+            break;
+        default:
+            return null;
+    }
+
+    return gRandPiece;
+}
+
+
+function getRandomIntInclusive(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+}
+
